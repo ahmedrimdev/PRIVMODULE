@@ -1,5 +1,7 @@
 package com.rimdev.rimpriv.service;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -207,51 +209,33 @@ public class RoleService {
                 rolesList = t_Role_Repo.findByRoleServiceCodeNull(roleservicecode);
             }
 
+            if(rolesList.isEmpty()){
+                // insert error no privledge
+                return msg; 
+            }
+
             // After filtering with RoleServiceCode, getting RoleDeviceId
-            List<String> roleDeviceIdsNotNUll = new ArrayList<>();
-            List<String> roleDeviceIdsNUll = new ArrayList<>();
-            for (int i = 0; i < rolesList.size(); i++) {
-                if ((rolesList.get(i).getRoledeviceid().equals("-")
-                        || rolesList.get(i).getRoledeviceid() != null)
-                        && !(rolesList.get(i).getRoledeviceid().equals("*"))) {
 
-                    roleDeviceIdsNotNUll.add(rolesList.get(i).getRoledeviceid());
-                } else {
-                    roleDeviceIdsNUll.add(rolesList.get(i).getRoledeviceid());
-                    // the permission will be denied
-                }
+             // new T_Role().getRoledeviceid()
 
+            rolesList = processRoleNotNullable(rolesList, "getRoledeviceid", roledeviceid);
+
+            System.out.println(rolesList);
+
+            if(rolesList.isEmpty()){
+                // insert error no privledge
+                return msg; 
             }
 
-            // Working on roledeviceid
-            if (roledeviceid != null) {
-                rolesList = t_Role_Repo.findByRoledeviceidNotNull(roleDeviceIdsNotNUll, roleservicecode);
-            } else {
-                rolesList = t_Role_Repo.findByRoledeviceidNull(roleDeviceIdsNotNUll, roleservicecode);
-            }
+           // new T_Role().getRoledevicetype()
 
-            // After filtering by RoleDeviceId, getting RoleDeviceType
-            List<String> roleDeviceTypesNotNUll = new ArrayList<>();
-            List<String> roleDeviceTypesNUll = new ArrayList<>();
-            for (int i = 0; i < rolesList.size(); i++) {
-                if (rolesList.get(i).getRoledevicetype().equals("-")
-                        || rolesList.get(i).getRoledevicetype() != null
-                        || !(rolesList.get(i).getRoledevicetype().equals("*"))) {
+            rolesList = processRoleNotNullable(rolesList, "getRoledevicetype", roledevicetype);
 
-                    roleDeviceTypesNotNUll.add(rolesList.get(i).getRoledevicetype());
-                } else {
-                    roleDeviceTypesNUll.add(rolesList.get(i).getRoledevicetype());
-                    // the permission will be denied
-                }
+            System.out.println(rolesList);
 
-            }
-
-            // Working on roledevicetype
-            if (roledevicetype != null) {
-                rolesList = t_Role_Repo.findByRoledevicetypeNotNull(roleDeviceTypesNotNUll, roleservicecode,
-                        roledeviceid);
-            } else {
-                rolesList = t_Role_Repo.findByRoledevicetypeNull(roleDeviceTypesNUll, roleservicecode, roledeviceid);
+            if(rolesList.isEmpty()){
+                // insert error no privledge
+                return msg; 
             }
 
             // After filtering by RoleDeviceType, getting RoleUserId
@@ -387,6 +371,39 @@ public class RoleService {
 
         return msg;
 
+    }
+
+    public List<T_Role> processRoleNotNullable(List<T_Role> rolesList, String methodName, String parmetercheck) {
+
+        List<T_Role> roleafter = new ArrayList<>();
+
+        Object result = null;
+
+        for (int i = 0; i < rolesList.size(); i++) {
+            try {
+                Method m = null;
+
+                m = rolesList.get(i).getClass().getDeclaredMethod(methodName);
+
+                result = m.invoke(rolesList.get(i)); // field value
+            } catch (Exception iae) {
+                return roleafter;
+            }
+
+            if (result.equals("*")
+                    || result.equals("NULL")) {
+                roleafter.remove(rolesList.get(i));
+            } else {
+                if (result != null
+                        && !result.equals("-")
+                        && !result.equals(parmetercheck)) {
+                    roleafter.remove(rolesList.get(i));
+                }
+
+            }
+        }
+
+        return roleafter;
     }
 
     // function to sort hashmap by values

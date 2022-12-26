@@ -35,8 +35,6 @@ public class T_Role implements Serializable {
     public static final long serialVersionUID = 1L;
 
     @Id
-    @JsonIgnore
-    @XmlTransient
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "ID", nullable = false)

@@ -18,10 +18,10 @@ public interface T_Role_Repo extends JpaRepository<T_Role, Integer> {
 
     // Optional<List<T_Role>> findByRoleServiceCode(String roleservicecode);
 
-    @Query(value = "SELECT * FROM tarm_devices.t_role t WHERE t.roleservicecode IN ('?1' , '*', '-');", nativeQuery = true)
+    @Query(value = "SELECT * FROM tarm_devices.t_role  WHERE roleservicecode = ?1", nativeQuery = true)
     List<T_Role> findByRoleServiceCodeNotNull(String roleservicecode);
 
-    @Query(value = "SELECT * FROM tarm_devices.t_role t WHERE t.roleservicecode IS NULL AND t.roleservicecode='*'; ", nativeQuery = true)
+    @Query(value = "SELECT * FROM tarm_devices.t_role t WHERE t.roleservicecode IS NULL AND t.roleservicecode='*'", nativeQuery = true)
     List<T_Role> findByRoleServiceCodeNull(String roleservicecode);
 
     // Optional<List<T_Role>> findByRoledeviceid(String roledeviceid);
