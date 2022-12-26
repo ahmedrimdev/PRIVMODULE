@@ -3,7 +3,7 @@
 <configuration>
  <springProfile name="dev">
     <property name="LOG_PATTERN" value="%d %green([%thread]) %highlight(%level) %logger{50} - %msg%n" />
-    <property name="APP_LOG_ROOT" value="D:\\\\"/>
+    <property name="APP_LOG_ROOT" value="G:\\\\"/>
      
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
