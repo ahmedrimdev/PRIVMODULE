@@ -24,7 +24,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @EqualsAndHashCode
-@Table(name = "T_Group", catalog = "tarm_devices", schema = "tarm_devices")
+@Table(name = "T_Group", catalog = "tarm_privilege", schema = "tarm_privilege")
 @XmlRootElement
 @NamedQueries({
         @NamedQuery(name = "T_Group.findByGroupId", query = "SELECT d FROM T_Group d WHERE d.groupid = ?1"),

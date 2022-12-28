@@ -104,15 +104,11 @@ public class GroupService {
     public BusinessMessage addGroupServ(BusinessMessage msg) {
         try {
 
-            String groupid = (String) msg.getPara().get("groupid");
             String groupname = (String) msg.getPara().get("groupname");
             String grouppriority = (String) msg.getPara().get("grouppriority");
             String groupstatus = (String) msg.getPara().get("groupstatus");
 
             T_Group addGroup = new T_Group();
-
-            if (groupid != null)
-                addGroup.setGroupid(groupid);
 
             if (groupname != null)
                 addGroup.setGroupname(groupname);

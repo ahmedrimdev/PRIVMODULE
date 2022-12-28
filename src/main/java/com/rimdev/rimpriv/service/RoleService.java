@@ -3,6 +3,7 @@ package com.rimdev.rimpriv.service;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -55,10 +56,11 @@ public class RoleService {
             String roleuserid = (String) msg.getPara().get("roleuserid");
             String roleusertype = (String) msg.getPara().get("roleusertype");
             String rolepagenum = (String) msg.getPara().get("rolepagenum");
-            String groupid = (String) msg.getPara().get("groupid");
+            String groupid = (String) msg.getPara().get("ptid2");
 
             // get
             Optional<List<T_Role>> rolesList = t_Role_Repo.findByRoleId(roleid);
+            Optional<T_Group> group = t_Group_Repo.findByGroupId(groupid);
 
             if (rolesList.isPresent()) {
 
@@ -83,8 +85,14 @@ public class RoleService {
                     if (rolepagenum != null)
                         t_Role.setRolepagenum(rolepagenum);
 
-                    if (groupid != null)
-                        t_Role.setGroupid(groupid);
+                    if (group.isPresent()) {
+                        if (groupid != null) {
+                            t_Role.setGroupid(groupid);
+                        }
+                    } else {
+                        msg.setErrorflag(true);
+                        t_Role.setGroupid(null);
+                    }
 
                     t_Role_Repo.save(t_Role);
                 }
@@ -140,7 +148,7 @@ public class RoleService {
         try {
 
             String roleid = (String) msg.getPara().get("roleid");
-            String roleservicecode = (String) msg.getPara().get("roleservicecode");
+            String roleservicecode = (String) msg.getServiceCode();
             String roledeviceid = (String) msg.getPara().get("roledeviceid");
             String roledevicetype = (String) msg.getPara().get("roledevicetype");
             String roleuserid = (String) msg.getPara().get("roleuserid");
@@ -150,31 +158,35 @@ public class RoleService {
 
             T_Role addRole = new T_Role();
 
-            if (roleid != null)
-                addRole.setRoleid(roleid);
+            Optional<T_Group> group = t_Group_Repo.findByGroupId(groupid);
 
-            if (roleservicecode != null)
-                addRole.setRoleservicecode(roleservicecode);
+            if (group.isPresent()) {
 
-            if (roledeviceid != null)
-                addRole.setRoledeviceid(roledeviceid);
+                if (roleservicecode != null)
+                    addRole.setRoleservicecode(roleservicecode);
 
-            if (roledevicetype != null)
-                addRole.setRoledevicetype(roledevicetype);
+                if (roledeviceid != null)
+                    addRole.setRoledeviceid(roledeviceid);
 
-            if (roleuserid != null)
-                addRole.setRoleuserid(roleuserid);
+                if (roledevicetype != null)
+                    addRole.setRoledevicetype(roledevicetype);
 
-            if (roleusertype != null)
-                addRole.setRoleusertype(roleusertype);
+                if (roleuserid != null)
+                    addRole.setRoleuserid(roleuserid);
 
-            if (rolepagenum != null)
-                addRole.setRolepagenum(rolepagenum);
+                if (roleusertype != null)
+                    addRole.setRoleusertype(roleusertype);
 
-            if (groupid != null)
-                addRole.setGroupid(groupid);
+                if (rolepagenum != null)
+                    addRole.setRolepagenum(rolepagenum);
 
-            t_Role_Repo.save(addRole);
+                if (groupid != null)
+                    addRole.setGroupid(groupid);
+
+                t_Role_Repo.save(addRole);
+            } else {
+                msg.setErrorflag(true);
+            }
 
             // reset para
             Map<String, Object> para = new HashMap<>();
@@ -192,144 +204,101 @@ public class RoleService {
     public BusinessMessage checkPrivilegeServ(BusinessMessage msg) {
         try {
 
-            String roleservicecode = (String) msg.getPara().get("roleservicecode");
+            String roleservicecode = msg.getServiceCode();
             String roledeviceid = (String) msg.getPara().get("roledeviceid");
             String roledevicetype = (String) msg.getPara().get("roledevicetype");
             String roleuserid = (String) msg.getPara().get("roleuserid");
             String roleusertype = (String) msg.getPara().get("roleusertype");
             String rolepagenum = (String) msg.getPara().get("rolepagenum");
 
-            String groupid = "";
+            int groupid = 0;
 
             List<T_Role> rolesList = new ArrayList<>();
+
             // working on roleservicecode
             if (roleservicecode != null) {
                 rolesList = t_Role_Repo.findByRoleServiceCodeNotNull(roleservicecode);
             } else {
                 rolesList = t_Role_Repo.findByRoleServiceCodeNull(roleservicecode);
             }
+            System.out.println("roleservicecode: " + roleservicecode);
 
-            if(rolesList.isEmpty()){
+            if (rolesList.isEmpty()) {
                 // insert error no privledge
-                return msg; 
+                msg.setErrorflag(true);
+                return msg;
             }
 
-            // After filtering with RoleServiceCode, getting RoleDeviceId
+            // new T_Role().getRoledeviceid()
+            if (roledeviceid != null && !roledeviceid.equals("*") && !roledeviceid.equals("NULL")) {
+                rolesList = processRoleNotNullable(rolesList, "getRoledeviceid", roledeviceid);
+            } else { // roledeviceid= *, "" , NULL will be denied
+                msg.setErrorflag(true);
+                return msg;
+            }
 
-             // new T_Role().getRoledeviceid()
-
-            rolesList = processRoleNotNullable(rolesList, "getRoledeviceid", roledeviceid);
-
-            System.out.println(rolesList);
-
-            if(rolesList.isEmpty()){
+            if (rolesList.isEmpty()) {
                 // insert error no privledge
-                return msg; 
+                msg.setErrorflag(true);
+                return msg;
             }
 
-           // new T_Role().getRoledevicetype()
+            // new T_Role().getRoledevicetype()
+            if (roledevicetype != null && !roledevicetype.equals("*") && !roledevicetype.equals("NULL")) {
+                rolesList = processRoleNotNullable(rolesList, "getRoledevicetype", roledevicetype);
+            } else { // roledevicetype= * , "" , NULL will be denied
+                msg.setErrorflag(true);
+                return msg;
 
-            rolesList = processRoleNotNullable(rolesList, "getRoledevicetype", roledevicetype);
-
-            System.out.println(rolesList);
-
-            if(rolesList.isEmpty()){
+            }
+            if (rolesList.isEmpty()) {
                 // insert error no privledge
-                return msg; 
+                msg.setErrorflag(true);
+
+                return msg;
             }
 
-            // After filtering by RoleDeviceType, getting RoleUserId
-            List<String> roleUserIdsNotNUll = new ArrayList<>();
-            List<String> roleUserIdsNUll = new ArrayList<>();
-            for (int i = 0; i < rolesList.size(); i++) {
-                if (rolesList.get(i).getRoleuserid().equals("-")
-                        || rolesList.get(i).getRoleuserid() != null
-                        || rolesList.get(i).getRoleuserid().equals("*")) {
-
-                    roleUserIdsNotNUll.add(rolesList.get(i).getRoleuserid());
-                }
-                if (rolesList.get(i).getRoleuserid() == null
-                        || rolesList.get(i).getRoleuserid().equals("*")) {
-
-                    roleUserIdsNUll.add(rolesList.get(i).getRoleuserid());
-                    // the permission will be denied
-                }
-
-            }
-
-            // Working on roleuserid
-            if (roleuserid != null) {
-                rolesList = t_Role_Repo.findByRoleuseridNotNull(roleUserIdsNotNUll, roleservicecode, roledeviceid,
-                        roledevicetype);
+            // new T_Role().getRoleuserid()
+            if (roleuserid != null && !roleuserid.equals("NULL")) {
+                rolesList = processRoleNotNullable(rolesList, "getRoleuserid", roleuserid);
             } else {
-                rolesList = t_Role_Repo.findByRoleuseridNull(roleUserIdsNUll, roleservicecode, roledeviceid,
-                        roledevicetype);
+
             }
 
-            // After filtering by RoleUserId, getting RoleUserType
-            List<String> roleUserTypesNotNUll = new ArrayList<>();
-            List<String> roleUserTypesNUll = new ArrayList<>();
+            if (rolesList.isEmpty()) {
+                // insert error no privledge
+                msg.setErrorflag(true);
+
+                return msg;
+            }
+
+            // new T_Role().getRoleusertype()
+            rolesList = processRoleNotNullable(rolesList, "getRoleusertype", roleusertype);
+
+            if (rolesList.isEmpty()) {
+                // insert error no privledge
+                msg.setErrorflag(true);
+
+                return msg;
+            }
+
+            // new T_Role().getRolepagenum()
+            rolesList = processRoleNotNullable(rolesList, "getRolepagenum", rolepagenum);
+
+            if (rolesList.isEmpty()) {
+                // insert error no privledge
+                msg.setErrorflag(true);
+
+                return msg;
+            }
+
+            String roleid = "";
             for (int i = 0; i < rolesList.size(); i++) {
-                if (rolesList.get(i).getRoleusertype().equals("-")
-                        || rolesList.get(i).getRoleusertype() != null
-                        || rolesList.get(i).getRoleusertype().equals("*")) {
-
-                    roleUserTypesNotNUll.add(rolesList.get(i).getRoleusertype());
-                }
-                if (rolesList.get(i).getRoleusertype() == null
-                        || rolesList.get(i).getRoleusertype().equals("*")) {
-
-                    roleUserTypesNUll.add(rolesList.get(i).getRoleusertype());
-                    // the permission will be denied
-                }
-
-            }
-
-            // Working on roleusertype
-            if (roleusertype != null) {
-                rolesList = t_Role_Repo.findByRoleusertypeNotNull(roleUserTypesNotNUll, roleservicecode, roledeviceid,
-                        roledevicetype, roleuserid);
-            } else {
-                rolesList = t_Role_Repo.findByRoleusertypeNull(roleUserTypesNUll, roleservicecode, roledeviceid,
-                        roledevicetype, roleuserid);
-            }
-
-            // After filtering by RoleUserType, getting RolePageNum
-            List<String> rolePageNumNotNUll = new ArrayList<>();
-            List<String> rolePageNumNUll = new ArrayList<>();
-            for (int i = 0; i < rolesList.size(); i++) {
-                if (rolesList.get(i).getRolepagenum().equals("-")
-                        || rolesList.get(i).getRolepagenum() != null
-                        || rolesList.get(i).getRolepagenum().equals("*")) {
-
-                    rolePageNumNotNUll.add(rolesList.get(i).getRolepagenum());
-                }
-                if (rolesList.get(i).getRolepagenum() == null
-                        || rolesList.get(i).getRolepagenum().equals("*")) {
-
-                    rolePageNumNUll.add(rolesList.get(i).getRolepagenum());
-                    // the permission will be denied
-                }
-
-            }
-
-            // Working on rolepagenum
-            if (rolepagenum != null) {
-                rolesList = t_Role_Repo.findByRolepagenumNotNull(rolePageNumNotNUll, roleservicecode, roledeviceid,
-                        roledevicetype, roleuserid, roleusertype);
-            } else {
-                rolesList = t_Role_Repo.findByRolepagenumNull(rolePageNumNUll, roleservicecode, roledeviceid,
-                        roledevicetype, roleuserid, roleusertype);
-            }
-
-            // After finishing the filtering, getting RoleId to be able to get the group_id
-            List<String> roleIds = new ArrayList<>();
-            for (int i = 0; i < rolesList.size(); i++) {
-                roleIds.add(rolesList.get(i).getRoleid());
+                roleid = rolesList.get(i).getRoleid();
             }
 
             // get
-            Optional<List<T_Role>> role = t_Role_Repo.findByRoleId(roleIds.get(0)); // 2 roles
+            Optional<List<T_Role>> role = t_Role_Repo.findByRoleId(roleid); // 2 roles
 
             if (role.isPresent()) {
                 List<T_Role> roles = role.get();
@@ -349,7 +318,7 @@ public class RoleService {
                 Optional<T_Group> groups = t_Group_Repo.findByGroupId(lastEntry.getKey());
                 if (groups.isPresent()) {
                     T_Group group = groups.get();
-                    groupid = group.getGroupid();
+                    groupid = group.getPtid();
 
                 }
             } else {
@@ -364,13 +333,12 @@ public class RoleService {
 
             msg.setPara(para);
 
-            // msg = getAllRoles(msg);
         } catch (Exception e) {
             // send error with exception
+            msg.setErrorflag(true);
+            e.printStackTrace();
         }
-
         return msg;
-
     }
 
     public List<T_Role> processRoleNotNullable(List<T_Role> rolesList, String methodName, String parmetercheck) {
@@ -386,16 +354,50 @@ public class RoleService {
                 m = rolesList.get(i).getClass().getDeclaredMethod(methodName);
 
                 result = m.invoke(rolesList.get(i)); // field value
+                // roleafter.add(result);
             } catch (Exception iae) {
                 return roleafter;
             }
 
-            if (result.equals("*")
-                    || result.equals("NULL")) {
+            if (result.equals("NULL") || parmetercheck == null) {
+                roleafter.remove(rolesList.get(i));
+            } else {
+                if (parmetercheck != null
+                        && !result.equals("-")
+                        && !result.equals(parmetercheck)
+                        && !result.equals("*")) {
+                    roleafter.remove(rolesList.get(i));
+                }
+
+            }
+        }
+
+        return roleafter;
+    }
+
+    public List<T_Role> processRoleNullable(List<T_Role> rolesList, String methodName, String parmetercheck) {
+
+        List<T_Role> roleafter = new ArrayList<>();
+
+        String result = null;
+
+        for (int i = 0; i < rolesList.size(); i++) {
+            try {
+                Method m = null;
+
+                m = rolesList.get(i).getClass().getDeclaredMethod(methodName);
+
+                result = (String) m.invoke(rolesList.get(i)); // field value
+                // roleafter.add(result);
+            } catch (Exception iae) {
+                return roleafter;
+            }
+
+            if (result.equals("-") // not null
+                    || (result != null && !result.equals("*") && !result.equals("NULL"))) {
                 roleafter.remove(rolesList.get(i));
             } else {
                 if (result != null
-                        && !result.equals("-")
                         && !result.equals(parmetercheck)) {
                     roleafter.remove(rolesList.get(i));
                 }

@@ -25,11 +25,18 @@ import lombok.Setter;
 @Getter
 @Setter
 @EqualsAndHashCode
-@Table(name = "T_Role", catalog = "tarm_devices", schema = "tarm_devices")
+@Table(name = "T_Role", catalog = "tarm_privilege", schema = "tarm_privilege")
 @XmlRootElement
 @NamedQueries({
         @NamedQuery(name = "T_Role.findNotDele", query = "SELECT d FROM T_Role d WHERE d.deleted=0"),
-        @NamedQuery(name = "T_Role.findByRoleId", query = "SELECT d FROM T_Role d WHERE d.roleid= ?1") })
+        @NamedQuery(name = "T_Role.findByRoleId", query = "SELECT d FROM T_Role d WHERE d.roleid= ?1"),
+        @NamedQuery(name = "T_Role.findByRoledeviceidNotNull", query = "SELECT d FROM T_Role d WHERE d.roledeviceid IN (:roledeviceids) AND d.roleservicecode =:roleservicecode"),
+        @NamedQuery(name = "T_Role.findByRoledeviceidNull", query = "SELECT d FROM T_Role d WHERE d.roledeviceid IN (:roledeviceids) AND d.roleservicecode =:roleservicecode"),
+        @NamedQuery(name = "T_Role.findByRoledevicetypeNotNull", query = "SELECT d FROM T_Role d WHERE d.roledevicetype IN (:roledevicetypes) AND d.roleservicecode = :roleservicecode  AND d.roledeviceid =:roledeviceid"),
+        @NamedQuery(name = "T_Role.findByRoleuseridNotNull", query = "SELECT d FROM T_Role d WHERE d.roleuserid IN (:roleuserids) AND d.roleservicecode =:roleservicecode  AND d.roledeviceid =:roledeviceid AND d.roledevicetype=:roledevicetype"),
+        @NamedQuery(name = "T_Role.findByRoleusertypeNotNull", query = "SELECT d FROM T_Role d WHERE d.roleusertype IN (:roleusertypes) AND d.roleservicecode =:roleservicecode  AND d.roledeviceid =:roledeviceid AND d.roledevicetype=:roledevicetype AND d.roleuserid=:roleuserid"),
+        @NamedQuery(name = "T_Role.findByRolepagenumNotNull", query = "SELECT d FROM T_Role d WHERE d.rolepagenum IN (:rolepagenums) AND d.roleservicecode =:roleservicecode  AND d.roledeviceid =:roledeviceid AND d.roledevicetype=:roledevicetype AND d.roleuserid=:roleuserid AND d.roleusertype=:roleusertype") })
+
 public class T_Role implements Serializable {
 
     public static final long serialVersionUID = 1L;
